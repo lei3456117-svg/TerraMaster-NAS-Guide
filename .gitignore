@@ -1,0 +1,12 @@
+# Firmware and binary packages
+*.bin
+*.apk
+
+# Sensitive / Temporary files
+cookies.txt
+c.txt
+test.bin
+
+# OS files
+.DS_Store
+Thumbs.db

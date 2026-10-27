@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>铁威马 NAS 局域网与异地高速直连实战全指南</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --code-bg: #0f172a;
+      --code-text: #f8fafc;
+      --accent-green: #10b981;
+      --accent-yellow: #f59e0b;
+      --accent-red: #ef4444;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #090d16;
+        --card-bg: #111827;
+        --text: #f3f4f6;
+        --text-muted: #9ca3af;
+        --border: #1f2937;
+        --code-bg: #030712;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+    header .badge {
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 2.5rem;
+    }
+
+    @media (max-width: 820px) {
+      .container { grid-template-columns: 1fr; }
+      nav.sidebar { display: none; }
+    }
+
+    nav.sidebar {
+      position: sticky;
+      top: 5rem;
+      height: fit-content;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    nav.sidebar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    nav.sidebar ul { list-style: none; }
+    nav.sidebar li { margin-bottom: 0.5rem; }
+    nav.sidebar a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.875rem;
+      display: block;
+      padding: 0.35rem 0.6rem;
+      border-radius: 0.375rem;
+      transition: background 0.15s, color 0.15s;
+    }
+    nav.sidebar a:hover {
+      background: #f1f5f9;
+      color: var(--primary);
+    }
+
+    main { min-width: 0; }
+
+    section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+    section h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.6rem;
+      margin-bottom: 1.25rem;
+      color: var(--text);
+    }
+    section h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 1.25rem 0 0.5rem 0;
+      color: var(--primary);
+    }
+
+    p, ul, ol { margin-bottom: 1rem; }
+    ul, ol { padding-left: 1.5rem; }
+    li { margin-bottom: 0.35rem; }
+
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: #eff6ff;
+      color: #1e3a8a;
+      padding: 1rem;
+      border-radius: 0 0.5rem 0.5rem 0;
+      margin-bottom: 1.25rem;
+      font-size: 0.95rem;
+    }
+    .callout-warn {
+      border-left-color: var(--accent-red);
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.65rem 0.85rem;
+      text-align: left;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #e2e8f0;
+      color: #0f172a;
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.25rem;
+      font-size: 0.85em;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+
+    footer {
+      text-align: center;
+      padding: 2rem 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>铁威马 NAS 局域网与异地高速直连全指南</h1>
+    <div class="badge">小白到精通完整实战版</div>
+  </header>
+
+  <div class="container">
+    <nav class="sidebar">
+      <h3>目录导航</h3>
+      <ul>
+        <li><a href="#rules">一、网络模式与核心法则</a></li>
+        <li><a href="#nas-deploy">二、NAS 端 Docker 部署</a></li>
+        <li><a href="#client-mount">三、多端挂载与自动连接</a></li>
+        <li><a href="#share-guide">四、安全分享与排坑方案</a></li>
+        <li><a href="#proxy-coexist">五、代理软件共存调优</a></li>
+        <li><a href="#router-nat">六、路由器底层技术备忘</a></li>
+        <li><a href="#faq">七、实战 8 大翻车避坑字典</a></li>
+      </ul>
+    </nav>
+
+    <main>
+      <section id="rules">
+        <h2>一、网络模式与核心法则（必读）</h2>
+        <div class="callout callout-warn">
+          <strong>⚠️ 黄金核心法则：</strong><br>
+          • <strong>在公司办公</strong>：必须连物理局域网 <code>smb://192.168.1.198</code>！切勿连 100 开头的虚拟 IP，否则会触发企业路由器回环限制，白白绕道海外中继。<br>
+          • <strong>回家或出差</strong>：开启电脑上的 Tailscale，连 <code>smb://100.87.114.20</code>，享受 19ms 国内极速 P2P 穿透。
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>地点环境</th>
+              <th>推荐挂载地址</th>
+              <th>连接类型</th>
+              <th>实测延迟</th>
+              <th>传输带宽表现</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>公司办公室内</strong></td>
+              <td><code>smb://192.168.1.198</code></td>
+              <td>局域网物理交换</td>
+              <td><strong>0.4ms ~ 0.8ms</strong></td>
+              <td>跑满千兆网线（110MB/s~280MB/s），大视频秒传</td>
+            </tr>
+            <tr>
+              <td><strong>家中 / 出差外网</strong></td>
+              <td><code>smb://100.87.114.20</code></td>
+              <td>Tailscale P2P 直连</td>
+              <td><strong>19ms ~ 35ms</strong></td>
+              <td>跑满公司上传带宽，突破中继限速</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="nas-deploy">
+        <h2>二、铁威马 NAS 端部署（TOS 6 + Docker）</h2>
+        <p>铁威马 F4-423 拥有 Intel N5095 四核处理器 + 硬件 AES 加密，在 TOS「Container Manager」中以 Host 模式运行 Tailscale 负载几乎为零。</p>
+        
+        <h3>Docker Compose 部署步骤：</h3>
+        <ol>
+          <li>打开 Tailscale 网页端 Settings -> Keys，生成 <code>tskey-auth-</code> 密钥。</li>
+          <li>进入 TOS 桌面「Container Manager」->「项目」->「新增」，配置来源选「创建 docker-compose.yml」。</li>
+          <li>粘贴以下配置并填入实际密钥：</li>
+        </ol>
+        <pre><code>version: "3.7"
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: terramaster-nas
+    network_mode: host
+    privileged: true
+    volumes:
+      - /dev/net/tun:/dev/net/tun
+      - tailscale-data:/var/lib/tailscale
+    environment:
+      - TS_AUTHKEY=tskey-auth-xxxxxx  # 填入实际密钥
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    restart: unless-stopped
+
+volumes:
+  tailscale-data:</code></pre>
+        <p>创建完成后，手动将右侧滑块拨至开启；在 Tailscale 网页端对该设备点击 <code>...</code> 选择 <strong>Disable key expiry</strong> 保证永不掉线。</p>
+      </section>
+
+      <section id="client-mount">
+        <h2>三、多端挂载与日常使用（Mac / Windows）</h2>
+        <h3>1. 两个分区的区别</h3>
+        <ul>
+          <li><strong>公共协作盘（<code>public</code>）</strong>：团队公用资料库，所有分配了账号的人都可以访问。</li>
+          <li><strong>个人专属私有盘（<code>depp</code>）</strong>：以你的用户名命名的私有空间（开启家目录后自动生成），其他普通账号根本看不见也进不去。</li>
+        </ul>
+
+        <h3>2. Mac 端挂载与开机静默自动挂载</h3>
+        <ol>
+          <li>按快捷键 <strong><code>Cmd + K</code></strong>，输入纯 IP 地址（公司输 <code>smb://192.168.1.198</code>，外网输 <code>smb://100.87.114.20</code>）。</li>
+          <li>身份选择「注册用户」，输入账号密码并<strong>勾选记住密码</strong>。</li>
+          <li>在弹出的列表框中，按住 <code>Cmd</code> 键同时勾选 <strong><code>depp</code></strong> 和 <strong><code>public</code></strong> 两个盘符。</li>
+          <li><strong>开机自启</strong>：进入 Mac「系统设置 -> 通用 -> 登录项与扩展」，将桌面上的两个盘符和 Tailscale 一同加入「登录时打开」列表中。</li>
+        </ol>
+
+        <h3>3. Windows 电脑映射网络驱动器（Z: 盘）</h3>
+        <p>按快捷键 <code>Win + R</code> 输入 <code>\\192.168.1.198</code>（外网输 <code>\\100.87.114.20</code>），输入密码后右键目标文件夹选择「映射网络驱动器」，分配盘符为 <code>Z:</code> 即可固定在我的电脑中。</p>
+      </section>
+
+      <section id="share-guide">
+        <h2>四、安全分享给朋友或同事（零泄密与避坑方案）</h2>
+        <div class="callout">
+          <strong>特别警示（同事在公司直连延迟超高的根因）：</strong>在公司内，同事若连了「公司总 Wi-Fi」或输入了 <code>100.87.114.20</code> 虚拟 IP，会触发 NAT 回环失败或网段隔离，流量被迫绕行境外香港 DERP 中继（延迟 700ms 且限速 2Mbps）！
+        </div>
+        <ol>
+          <li><strong>同办公室同事（强烈推荐）</strong>：让同事连工位 <strong>Newifi Wi-Fi</strong>，<strong>完全无需安装 Tailscale</strong>，直接连接物理内网 <code>smb://192.168.1.198/public</code>（延迟立降至 0.5ms，传输满速 110MB/s）。</li>
+          <li><strong>异地同事单机分享（Share Machine）</strong>：Tailscale 后台点选 <code>terramaster-nas</code> 的 <code>Share...</code>，同事用自己的微软/苹果账号接收（<strong>切勿使用谷歌账号</strong>）。异地挂载 <code>smb://100.87.114.20/public</code>。</li>
+          <li><strong>NAS 权限隔离</strong>：在铁威马后台给朋友新建普通用户（切勿给 admin 组），在共享文件夹中只开放 <code>public</code> 权限，确保你的私有盘 <code>depp</code> 对其为「禁止访问」。</li>
+          <li><strong>临时发大文件</strong>：在铁威马网页文件管理中右键文件选「创建分享」，微信直接发提取码，对方零安装秒下载。</li>
+        </ol>
+
+        <h3>给同事的微信通知模板（点击复制）</h3>
+        <p><strong>办公室同事：</strong></p>
+        <pre><code>【公司 NAS 局域网高速网盘】
+1. 电脑连接工位 Wi-Fi。
+2. 挂载地址：
+   - Mac 用户（Cmd+K）：smb://192.168.1.198/public
+   - Windows 用户（Win+R）：\\192.168.1.198\public
+3. 账号：[同事用户名]   密码：[初始密码]</code></pre>
+        <p><strong>异地 / 居家同事：</strong></p>
+        <pre><code>【公司 NAS 远程网盘连接指引】
+1. 下载安装 Tailscale：https://tailscale.com/download
+2. 使用微软或苹果账号登录（免代理，切勿用谷歌）。
+3. 接受管理员发送的专属设备分享链接（Accept）。
+4. 挂载地址：
+   - Mac 用户（Cmd+K）：smb://100.87.114.20/public
+   - Windows 用户（Win+R）：\\100.87.114.20\public
+5. 账号：[同事用户名]   密码：[初始密码]</code></pre>
+      </section>
+
+      <section id="proxy-coexist">
+        <h2>五、与科学上网 / 代理软件共存调优</h2>
+        <h3>1. Mac 端 Clash Verge 避坑设置</h3>
+        <ol>
+          <li>打开 Clash Verge，<strong>先开启「系统代理」开关</strong>（激活系统权限）。</li>
+          <li>点击「系统代理」右侧齿轮 ⚙️，<strong>务必将「始终使用默认绕过」关闭（灰色）</strong>！</li>
+          <li>在当前绕过输入框填入 <code>100.64.0.0/10</code> 按回车，并确认已有 <code>192.168.0.0/16</code>，点击保存。</li>
+        </ol>
+
+        <h3>2. Mac 端 Antify 避坑</h3>
+        <p>Antify 采用系统透明代理扩展，勾选软件名单时<strong>绝对不要勾选「访达（Finder）」</strong>，即可确保文件传输不受干预。</p>
+
+        <h3>3. 公司路由器 v2rayA 放行（恢复 19ms 直连）</h3>
+        <p>浏览器打开 <code>http://192.168.1.1:2017</code>，点击设置，在自定义分流规则中加入：</p>
+        <pre><code>port(3478, 41641) -> direct
+ip(100.64.0.0/10) -> direct</code></pre>
+      </section>
+
+      <section id="router-nat">
+        <h2>六、路由器底层技术备忘（管理员）</h2>
+        <h3>1. 端口转发（OpenWrt 官方原版）</h3>
+        <p>在 OpenWrt「网络 -> 防火墙 -> 端口转发」中添加：外部 UDP 41641 -> 内部 <code>192.168.1.198:41641</code>。</p>
+
+        <h3>2. 关于「Full Cone NAT」的辟谣</h3>
+        <p>OpenWrt 官方原版（firewall4）默认没有国内定制版固件的「Full Cone NAT」独立勾选项，无需到处寻找。只要做好上述 41641 端口转发并配置好代理放行，穿透打洞即可稳定生效。</p>
+      </section>
+
+      <section id="faq">
+        <h2>七、小白实战 8 大翻车避坑字典</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>序号</th>
+              <th>常见翻车现象</th>
+              <th>根本原因</th>
+              <th>10 秒秒解方案</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1</strong></td>
+              <td>桌面替身卡死转圈，Cmd+Q 无法退出</td>
+              <td>替身记录了服务器根路径，网络断开广播超时；系统禁止退出核心访达</td>
+              <td>终端运行 <code>killall Finder</code> 强制重启，删除假替身</td>
+            </tr>
+            <tr>
+              <td><strong>2</strong></td>
+              <td>访达连接提示「连接失败」</td>
+              <td>Mac 默认以客人匿名身份连接，NAS 出于安全策略拒绝</td>
+              <td>点击右上角「连接身份...」切换为「注册用户」并记住密码</td>
+            </tr>
+            <tr>
+              <td><strong>3</strong></td>
+              <td>输入 <code>smb://.../home</code> 报错无此共享</td>
+              <td>铁威马个人盘默认以用户名命名（如 <code>depp</code>）而非叫 home</td>
+              <td>输入纯 IP <code>smb://192.168.1.198</code> 在列表弹窗中选自己名字</td>
+            </tr>
+            <tr>
+              <td><strong>4</strong></td>
+              <td>重启 Mac 后 NAS 盘全掉，提示连不上</td>
+              <td>Tailscale 重启后未自启（处于 Stopped），系统登录项抢先连接</td>
+              <td>在 Tailscale 勾选 Launch on login 并在系统登录项中放行</td>
+            </tr>
+            <tr>
+              <td><strong>5</strong></td>
+              <td>在公司内网传文件极慢 / 同事直连延迟超高</td>
+              <td>① 同事连了公司大楼 Wi-Fi 导致网段隔离；② 误用 100 虚拟 IP 触发 NAT 回环走境外香港中继</td>
+              <td>改连工位 Newifi Wi-Fi，直接连接内网物理地址 <code>smb://192.168.1.198/public</code>（0.5ms 秒开）</td>
+            </tr>
+            <tr>
+              <td><strong>6</strong></td>
+              <td>在路由器后台找不到 Full Cone NAT</td>
+              <td>重装的是 OpenWrt 官方原版，官方界面本来就没有第三方定制补丁</td>
+              <td>确认「网络 -> 防火墙 -> 端口转发」中有 UDP 41641 即可</td>
+            </tr>
+            <tr>
+              <td><strong>7</strong></td>
+              <td>Clash Verge 添加绕过规则被冲掉</td>
+              <td>开启了「始终使用默认绕过」，强制写死了内置规则</td>
+              <td>先开系统代理，关闭「始终使用默认绕过」，添加后保存</td>
+            </tr>
+            <tr>
+              <td><strong>8</strong></td>
+              <td>终端 ping 提示 via DERP(hkg) 延迟数百毫秒</td>
+              <td>路由器新代理全局拦截了 UDP 打洞探测包送去境外</td>
+              <td>在 v2rayA 自定义规则中加入 <code>port(3478, 41641) -> direct</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <p>铁威马 NAS 局域网与异地高速直连实战全指南 · 由 Antigravity 整理输出</p>
+  </footer>
+
+</body>
+</html>
