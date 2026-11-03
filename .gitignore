@@ -1,6 +1,12 @@
-# Firmware and binary packages
+# Firmware and large binary images
 *.bin
 *.apk
+*.img.gz
+*.tar.gz
+v2raya_v2ray-core_完美独立离线安装包_Newifi3_D2/
+
+# Local system configuration & sensitive backups
+etc/
 
 # Sensitive / Temporary files
 cookies.txt

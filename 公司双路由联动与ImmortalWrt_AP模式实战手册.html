@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>公司双路由联动与 ImmortalWrt AP 模式实战手册</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --accent: #0284c7;
+      --accent-hover: #0369a1;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --code-bg: #f1f5f9;
+      --code-text: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 24px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    header { padding-bottom: 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    h1 { font-size: 26px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+    .meta-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .badge {
+      display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500;
+      background-color: var(--code-bg); color: var(--text-muted); border: 1px solid var(--border);
+    }
+    .badge.green { background-color: rgba(22, 163, 74, 0.1); color: var(--success); border: 1px solid rgba(22, 163, 74, 0.25); }
+    .badge.blue { background-color: rgba(2, 132, 199, 0.1); color: var(--accent); border: 1px solid rgba(2, 132, 199, 0.25); }
+    .badge.orange { background-color: rgba(217, 119, 6, 0.1); color: var(--warning); border: 1px solid rgba(217, 119, 6, 0.25); }
+    .header-desc { color: var(--text-muted); font-size: 14px; }
+    
+    h2 { font-size: 20px; font-weight: 600; margin: 36px 0 16px; color: var(--accent); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(2, 132, 199, 0.2); padding-bottom: 8px; }
+    h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; color: #0f172a; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); }
+    
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f8fafc; color: #0f172a; font-weight: 600; border-top: 1px solid var(--border); }
+    td { color: #334155; }
+    tr:hover { background: #f8fafc; }
+    
+    .topo-diagram {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 20px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.5;
+      overflow-x: auto; color: #0369a1; margin: 16px 0;
+    }
+    
+    .step-list { list-style: none; counter-reset: step-counter; }
+    .step-item { position: relative; padding-left: 42px; margin-bottom: 20px; }
+    .step-item:last-child { margin-bottom: 0; }
+    .step-item::before {
+      content: counter(step-counter); counter-increment: step-counter; position: absolute; left: 0; top: 0;
+      width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #ffffff; font-weight: 700;
+      font-size: 14px; display: flex; align-items: center; justify-content: center;
+    }
+    
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #b91c1c; border: 1px solid rgba(0, 0, 0, 0.05); }
+    pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 13px; color: #0f172a; margin: 12px 0; }
+    pre code { background: transparent; border: none; padding: 0; color: #0f172a; }
+    
+    .callout { border-left: 4px solid var(--accent); background: rgba(2, 132, 199, 0.06); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; color: #334155; }
+    .callout.warning { border-color: var(--warning); background: rgba(217, 119, 6, 0.08); }
+    .callout.success { border-color: var(--success); background: rgba(22, 163, 74, 0.08); }
+    
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>公司双路由联动与 ImmortalWrt AP 模式实战手册</h1>
+    <div class="meta-badges">
+      <span class="badge green">● 生产环境已上线</span>
+      <span class="badge blue">拓扑: x86软路由 + 硬路由AP</span>
+      <span class="badge orange">网段: 192.168.100.0/24</span>
+      <span class="badge">NAS 自动就绪: 192.168.100.198</span>
+    </div>
+    <div class="header-desc">
+      记录公司办公网络重构全过程：主软路由负责出境外网分流与全网 DHCP/DNS 统揽，ImmortalWrt 硬路由化身纯无线 AP（二层直通零 NAT），全网设备高速互通。
+    </div>
+  </header>
+
+  <!-- Section 1 -->
+  <h2>一、 网络整体拓扑与设备分工</h2>
+  <div class="card">
+    <div class="topo-diagram">
+┌─────────────────────────────────────────────────────────────┐
+│  🏢 公司上级网络 / 交换机 (网段: 192.168.1.0/24 | 网关: 192.168.1.1)    │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ (网线接入软路由 eth0)
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│  💻 x86_64 主软路由 (iStoreOS | 局域网网关: 192.168.100.1)     │
+│  ├─ WAN (eth0): DHCP 动态获取 192.168.1.6                    │
+│  ├─ 核心服务: Dnsmasq (DHCP/DNS) + PassWall 2 (出境透明分流) │
+│  └─ LAN 网桥 (br-lan): IP 192.168.100.1 (物理口 eth1~eth3)   │
+└───┬──────────────────────────┬──────────────────────────┬───┘
+    │ (eth2 网线直连)          │ (eth1/eth3 网线级联)      │ (网线直连)
+    ▼                          ▼                          ▼
+┌───────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
+│ 🖥️ Mac 工作机         │  │ 📶 硬路由 AP (Immortal)│  │ 💾 铁威马 NAS         │
+│ IP: 192.168.100.100   │  │ IP: 192.168.100.2     │  │ IP: 192.168.100.198   │
+│ DNS: 192.168.100.1    │  │ 模式: 纯 AP (关闭DHCP) │  │ 延迟: 0.89ms (直连)   │
+│ 接口: en6 (USB 千兆)  │  │ 广播: 2.4G/5G Wi-Fi   │  │ 异地: 100.87.114.20    │
+└───────────────────────┘  └───────────┬───────────┘  └───────────────────────┘
+                                       │ (无线 Wi-Fi 接入)
+                                       ▼
+                           ┌───────────────────────┐
+                           │ 📱 手机 / 平板等移动端  │
+                           │ IP: 192.168.100.x     │
+                           │ 由主软路由统发 DHCP   │
+                           └───────────────────────┘
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>设备名称</th>
+          <th>系统与型号</th>
+          <th>承担角色</th>
+          <th>核心功能与职责</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>主软路由</strong></td>
+          <td>x86_64 iStoreOS</td>
+          <td><strong>全网唯一大脑 (主路由)</strong></td>
+          <td>WAN 口 DHCP 联网；PassWall 2 透明分流（AI 双轨出口隔离）；全网唯一 DHCP 服务中心；DNS 解析网关。</td>
+        </tr>
+        <tr>
+          <td><strong>实体硬路由</strong></td>
+          <td>Newifi 3 (ImmortalWrt)</td>
+          <td><strong>纯无线 AP (Dumb AP)</strong></td>
+          <td>关闭 DHCP、关闭 NAT、绕过防火墙；仅负责 2.4G/5G 射频无线覆盖与二层交换机扩展。</td>
+        </tr>
+        <tr>
+          <td><strong>Mac 工作机</strong></td>
+          <td>macOS Sequoia</td>
+          <td><strong>核心生产终端</strong></td>
+          <td>USB 千兆网卡直通软路由，配置静态 IP <code>192.168.100.100</code>，DNS 锁定 <code>192.168.100.1</code>。</td>
+        </tr>
+        <tr>
+          <td><strong>办公 NAS</strong></td>
+          <td>铁威马 TOS 6</td>
+          <td><strong>团队协同私有云</strong></td>
+          <td>通过软路由 DHCP 自动就绪于 <code>192.168.100.198</code>；开机即通，支持 SMB 满速与 Tailscale 穿透。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 2 -->
+  <h2>二、 全网 IP 资产与接口规划清单</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>设备与接口</th>
+          <th>物理端口</th>
+          <th>协议类型</th>
+          <th>IP 地址 / 掩码</th>
+          <th>网关</th>
+          <th>DNS</th>
+          <th>用途说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>公司上级网络</strong></td>
+          <td>公司交换机</td>
+          <td>-</td>
+          <td><code>192.168.1.1/24</code></td>
+          <td>-</td>
+          <td>运营商</td>
+          <td>公司外部上行主网络</td>
+        </tr>
+        <tr>
+          <td><strong>软路由 WAN</strong></td>
+          <td><code>eth0</code></td>
+          <td>DHCP 客户端</td>
+          <td><code>192.168.1.6/24</code></td>
+          <td><code>192.168.1.1</code></td>
+          <td><code>192.168.1.1</code></td>
+          <td>获取公司上级网络连接</td>
+        </tr>
+        <tr>
+          <td><strong>软路由 LAN</strong></td>
+          <td><code>br-lan (eth1~3)</code></td>
+          <td>静态 IP</td>
+          <td><code>192.168.100.1/24</code></td>
+          <td>-</td>
+          <td><code>127.0.0.1</code></td>
+          <td>局域网主网关、后台管理入口</td>
+        </tr>
+        <tr>
+          <td><strong>ImmortalWrt AP</strong></td>
+          <td><code>br-lan (LAN 口)</code></td>
+          <td>静态 IP</td>
+          <td><code>192.168.100.2/24</code></td>
+          <td><code>192.168.100.1</code></td>
+          <td><code>192.168.100.1</code></td>
+          <td>AP 管理后台（DHCP/IPv6 已禁用）</td>
+        </tr>
+        <tr>
+          <td><strong>Mac 工作机</strong></td>
+          <td><code>en6 (USB 网卡)</code></td>
+          <td>手动静态</td>
+          <td><code>192.168.100.100/24</code></td>
+          <td><code>192.168.100.1</code></td>
+          <td><code>192.168.100.1</code></td>
+          <td>直连软路由，百度/谷歌秒开</td>
+        </tr>
+        <tr>
+          <td><strong>铁威马 NAS (内网)</strong></td>
+          <td>物理网口 1</td>
+          <td>DHCP 动态获取</td>
+          <td><code>192.168.100.198/24</code></td>
+          <td><code>192.168.100.1</code></td>
+          <td><code>192.168.100.1</code></td>
+          <td>SMB 局域网挂载（80 / 445 端口通畅）</td>
+        </tr>
+        <tr>
+          <td><strong>铁威马 NAS (远控)</strong></td>
+          <td>Tailscale 虚拟网</td>
+          <td>P2P 打洞直连</td>
+          <td><code>100.87.114.20</code></td>
+          <td>-</td>
+          <td>Tailscale</td>
+          <td>出差/异地远程千兆穿透访问</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 3 -->
+  <h2>三、 今日双路由打通全流程实录</h2>
+  <div class="card">
+    <ul class="step-list">
+      <li class="step-item">
+        <h3>软路由 WAN 口由家庭 PPPoE 切回公司 DHCP</h3>
+        <p>软路由由于刷入的是家庭网络备份，原 WAN 口固化了家庭宽带 PPPoE 账号。将其重置为标准 DHCP 客户端：</p>
+        <pre><code>uci set network.wan.proto='dhcp'
+uci delete network.wan.username
+uci delete network.wan.password
+uci commit network
+/etc/init.d/network restart</code></pre>
+        <p>重启后 WAN 口秒级获取 <code>192.168.1.6</code>，网关 <code>192.168.1.1</code>，外网连通。</p>
+      </li>
+
+      <li class="step-item">
+        <h3>PassWall 2 出境透明分流服务验证</h3>
+        <p>确认 Xray 主分流与三大 Sing-box 子进程独立运行：</p>
+        <ul>
+          <li><strong>AI_APAC (端口 2006)</strong>：专属亚太台湾低延迟出口，承载 Antigravity、Gemini API、GitHub。</li>
+          <li><strong>AI_US (端口 2005)</strong>：专属美国高风控原生出口，严防 Claude Code、Codex 异地漂移。</li>
+          <li><strong>Default (端口 2004)</strong>：通用外网出口（YouTube、普通网站）。</li>
+        </ul>
+      </li>
+
+      <li class="step-item">
+        <h3>Mac 本机 USB 网卡 DNS 缺失故障排查与修复</h3>
+        <p><strong>故障现象</strong>：软路由通网且外网 IP 可 Ping 通，但 Mac 无法打开任何网页。<br/>
+        <strong>故障根因</strong>：Mac 外接 USB 网卡 (<code>en6</code>) 手动配置了 IP <code>192.168.100.100</code>，但 <strong>DNS 服务器一栏留空</strong>，系统无法进行域名解析。<br/>
+        <strong>修复方案</strong>：注入主路由 DNS <code>192.168.100.1</code> 后瞬时恢复正常：</p>
+        <pre><code>networksetup -setdnsservers "USB 10/100/1000 LAN" 192.168.100.1</code></pre>
+      </li>
+
+      <li class="step-item">
+        <h3>ImmortalWrt 硬路由化身纯无线 AP (Dumb AP)</h3>
+        <p>进入 ImmortalWrt 的「网络 ➡️ 接口 ➡️ lan」修改：</p>
+        <ul>
+          <li>IPv4 地址修改为：<code>192.168.100.2</code></li>
+          <li>IPv4 网关填写为：<code>192.168.100.1</code></li>
+          <li>IPv4 广播地址清空</li>
+          <li>高级设置中填入自定义 DNS：<code>192.168.100.1</code></li>
+          <li><strong>核心步骤</strong>：在 DHCP 服务器常规设置中，勾选 <strong>「忽略此接口」</strong>；IPv6 设置全部设为「已禁用」。</li>
+        </ul>
+      </li>
+
+      <li class="step-item">
+        <h3>铁威马 NAS 硬件接入与自动就绪</h3>
+        <p>NAS 网线插入软路由/交换机 LAN 口开机，自动通过主软路由 DHCP 获取到 <strong><code>192.168.100.198</code></strong>。实测 ping 延迟 0.89ms，Web 管理（80）与 SMB（445）均秒级连通，Tailscale 自动在线。</p>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Section 4 -->
+  <h2>四、 核心原理解析：接 LAN 口 vs 接 WAN 口的本质区别</h2>
+  <div class="card">
+    <div class="grid-2">
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px;">
+        <h3 style="color: var(--success); margin-top: 0;">✅ 接 LAN 口（当前生产标准 · 纯二层 AP）</h3>
+        <ul style="padding-left: 20px; font-size: 14px; margin-top: 10px; color: #166534;">
+          <li><strong>网络层级</strong>：纯二层交换网络（Layer 2 Bridge）。</li>
+          <li><strong>NAT 损耗</strong>：<strong>0 次 NAT 转换</strong>，无任何额外协议开销与延迟。</li>
+          <li><strong>广播域</strong>：全屋统一广播域，mDNS、SSDP、Bonjour 协议完全畅通。</li>
+          <li><strong>设备互访</strong>：手机连 Wi-Fi 与电脑插网线完全同级，秒搜 NAS 共享、无线投屏、AirDrop。</li>
+          <li><strong>维护要求</strong>：关闭 DHCP，IP 设在同一网段，杜绝任何网络打架。</li>
+        </ul>
+      </div>
+
+      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px;">
+        <h3 style="color: var(--danger); margin-top: 0;">❌ 接 WAN 口（若未重构网桥的传统接法）</h3>
+        <ul style="padding-left: 20px; font-size: 14px; margin-top: 10px; color: #991b1b;">
+          <li><strong>网络层级</strong>：三层路由网络（Layer 3 Routing）。</li>
+          <li><strong>NAT 损耗</strong>：<strong>双重 NAT 转换</strong>，增加握手开销，阻碍 P2P 打洞。</li>
+          <li><strong>广播域</strong>：WAN 口防火墙默认丢弃内网广播包，广播域被割裂。</li>
+          <li><strong>设备互访</strong>：手机连 Wi-Fi 无法自动发现插在主路由上的 NAS 和打印机。</li>
+          <li><strong>特别说明</strong>：普通家用路由（小米等）之所以能插 WAN，是因为其“AP 模式”在系统底层把 WAN 口软件桥接进了 LAN 网桥。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5 -->
+  <h2>五、 后台管理入口与日常访问速查</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>访问目标</th>
+          <th>局域网访问地址</th>
+          <th>异地 / 备用地址</th>
+          <th>登录账号 / 说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>主软路由 (iStoreOS)</strong></td>
+          <td><a href="http://192.168.100.1" target="_blank" style="color:var(--accent); font-weight: 500;">http://192.168.100.1</a></td>
+          <td>-</td>
+          <td><code>root</code> / <code>password</code> (主控中心)</td>
+        </tr>
+        <tr>
+          <td><strong>硬路由 AP (Immortal)</strong></td>
+          <td><a href="http://192.168.100.2" target="_blank" style="color:var(--accent); font-weight: 500;">http://192.168.100.2</a></td>
+          <td>-</td>
+          <td><code>root</code> / <code>password</code> (Wi-Fi 管理)</td>
+        </tr>
+        <tr>
+          <td><strong>铁威马 NAS Web 后台</strong></td>
+          <td><a href="http://192.168.100.198" target="_blank" style="color:var(--accent); font-weight: 500;">http://192.168.100.198</a></td>
+          <td><a href="http://100.87.114.20:8181" target="_blank" style="color:var(--accent); font-weight: 500;">http://100.87.114.20:8181</a></td>
+          <td>TOS 系统管理员账号</td>
+        </tr>
+        <tr>
+          <td><strong>铁威马 NAS 局域网 SMB</strong></td>
+          <td><code>smb://192.168.100.198</code></td>
+          <td><code>smb://100.87.114.20</code> (Tailscale)</td>
+          <td>Mac 访达 ➡️ 前往 ➡️ 连接服务器</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>
