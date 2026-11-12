@@ -34,7 +34,27 @@
 ## 5. AI 工具链分流与风控隔离铁律（节点通用化规范）
 * **核心定论（节点无贵贱，关键在规则与 DNS）**：便宜节点与贵节点在驱动 AI Agent 时无本质差异，决定速度与稳定性的核心是 **精准分流规则** 与 **DNS 干净解析**。
 * **通用出口 4 级隔离规范**：
-  1. **【高风控隔离出口·美国】**：专供 `Claude Code`、`Claude Agent`、`OpenAI / Codex`。严苛防封号与防异地漂移，必须锁定固定美国出口。
+  1. **【高风控隔离出口·美国】**：专供 `Claude Code`、`Claude Agent`、`OpenAI / Codex / Grok`。严苛防封号与防异地漂移，必须锁定固定美国出口。必须包含人机风控与跨国鉴权绑定域名（`arkoselabs.com`、`challenges.cloudflare.com`、`accounts.google.com`），杜绝指纹与主站出口割裂。
   2. **【亚太低延迟出口·台新】**：专供 `Antigravity`、`Google Gemini API`、`GitHub`。追求 100~200ms 极速响应，保障高频 gRPC/WebSocket 长连接。
   3. **【通用日常出口】**：通用外网兜底（YouTube 视频、普通海外网页）。
   4. **【国内直连白名单】**：`扣子`、`WorkBuddy`、`Kimi` 等国内工具内核级 0ms 放行。
+
+### 6. AI_US 关键分流域名清单 (2026-11-12 生产固化)
+```text
+geosite:anthropic
+domain:claude.ai
+domain:claude.com
+domain:anthropic.com
+domain:claudeusercontent.com
+geosite:openai
+domain:openai.com
+domain:chatgpt.com
+domain:oaistatic.com
+domain:oaiusercontent.com
+domain:grok.com
+domain:x.ai
+domain:grok.x.com
+domain:arkoselabs.com
+domain:challenges.cloudflare.com
+domain:accounts.google.com
+```

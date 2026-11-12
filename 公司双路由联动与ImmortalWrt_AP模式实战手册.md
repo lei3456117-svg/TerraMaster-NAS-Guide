@@ -82,7 +82,8 @@ flowchart TD
 * **分流架构**：
   * 主分流节点：`Xray` 分流主控。
   * `AI_APAC`（低延迟出口）：分配给 Antigravity、Gemini API、GitHub，端口 `127.0.0.1:2006`。
-  * `AI_US`（高风控出口）：锁定固定美国原生 IP，分配给 Claude Code、Codex，端口 `127.0.0.1:2005`。
+  * `AI_US`（高风控出口）：锁定固定美国原生 IP，分配给 Claude Code、Codex、Grok (xAI)，端口 `127.0.0.1:2005`。
+    * **2026-11-12 关键加固**：追加 `domain:arkoselabs.com`、`domain:challenges.cloudflare.com`、`domain:accounts.google.com`，实现人机验证、5秒盾与 OAuth 登录和 AI 主站 100% 锁死在同国出口。
   * `Default`（通用出口）：日常网页与 YouTube，端口 `127.0.0.1:2004`。
 * **验证结果**：重启 PassWall 2 后，三大子节点全部以独立 `sing-box` 进程在后台稳定监听。
 
