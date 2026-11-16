@@ -57,4 +57,5 @@ domain:grok.x.com
 domain:arkoselabs.com
 domain:challenges.cloudflare.com
 domain:accounts.google.com
+domain:muse.ai
 ```
